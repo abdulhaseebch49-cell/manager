@@ -1,6 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Financial Expense Manager - Cloud Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Interactive Visual Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase App & Firestore CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#080c14',
+                        cardBg: '#0f172a',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        html.dark body { background-color: #080c14; color: #f8fafc; }
+        html:not(.dark) body { background-color: #f1f5f9; color: #0f172a; }
+
+        html.dark .app-card {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(6, 182, 212, 0.4);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+        }
+        html:not(.dark) .app-card {
+            background: #ffffff;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        html.dark .app-card-purple {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+        }
+        html:not(.dark) .app-card-purple {
+            background: #ffffff;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .neon-button-purple {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+            color: #ffffff;
+        }
+        .neon-button-green {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+            color: #ffffff;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        html.dark ::-webkit-scrollbar-thumb { background: #334155; }
+    </style>
+</head>
+<body class="min-h-screen p-3 sm:p-6 flex flex-col justify-between">
+
+    <div class="w-full max-w-7xl mx-auto">
+        
+        <!-- AUTH CONTAINER (Login / Register) -->
+        <div id="authContainer" class="max-w-md mx-auto mt-12 app-card rounded-3xl p-8 relative overflow-hidden">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-cyan-500/10 rounded-2xl text-cyan-500 mb-3 border border-cyan-500/30 shadow-lg">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold tracking-tight">Expense Tracker Cloud</h1>
+                <p class="text-slate-400 text-xs mt-1">Access From Any Device, Anywhere</p>
+            </div>
+
+            <!-- Auth Tabs -->
+            <div class="flex bg-slate-800/20 dark:bg-slate-900 p-1 rounded-xl mb-6 border border-slate-700/50">
+                <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-cyan-500 text-slate-950 transition">Login</button>
+                <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 py-2 text-xs font-semibold text-slate-400 rounded-lg hover:text-white transition">Create Account</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Username</label>
+                    <input type="text" id="loginUsername" required placeholder="Enter username" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Password</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400">
+                </div>
+                <button type="submit" class="w-full neon-button-green font-extrabold py-3 rounded-xl transition">
+                    Login to Cloud Dashboard
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Choose Username</label>
+                    <input type="text" id="regUsername" required placeholder="Unique username" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Choose Password</label>
+                    <input type="password" id="regPassword" required placeholder="••••••••" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400">
+                </div>
+                <button type="submit" class="w-full neon-button-green font-extrabold py-3 rounded-xl transition">
+                    Register Cloud Account
+                </button>
+            </form>
+        </div>
+
+        <!-- MAIN APP DASHBOARD -->
+        <div id="appContainer" class="hidden space-y-6">
+            
+            <!-- Top Navbar -->
+            <header class="flex flex-col sm:flex-row justify-between items-center app-card rounded-2xl p-4 gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-cyan-500/20 rounded-xl flex items-center justify-center text-cyan-500 border border-cyan-500/30">
+                        <i class="fa-solid fa-cloud"></i>
+                    </div>
+                    <div>
+                        <h2 id="userDisplayName" class="text-base font-bold">Smart Financial Expense Manager</h2>
+                        <p class="text-xs text-cyan-500 font-medium">Cloud Synced Dashboard</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="toggleTheme()" title="Toggle Dark/Light Mode" class="p-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-xl transition text-xs border border-slate-300 dark:border-slate-700">
+                        <i id="themeIcon" class="fa-solid fa-moon text-sm"></i>
+                    </button>
+                    <button onclick="shareOnWhatsApp()" title="Share Summary on WhatsApp" class="px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-500 border border-emerald-500/40 rounded-xl transition text-xs font-bold flex items-center">
+                        <i class="fa-brands fa-whatsapp text-sm mr-1.5"></i> Share
+                    </button>
+                    <button onclick="openSettingsModal()" title="Settings" class="p-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-xl transition text-xs border border-slate-300 dark:border-slate-700">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                    <button onclick="logout()" class="px-3 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 border border-rose-500/40 rounded-xl transition text-xs font-semibold">
+                        <i class="fa-solid fa-sign-out-alt mr-1"></i> Logout
+                    </button>
+                </div>
+            </header>
+
+            <!-- Alert Banner -->
+            <div id="alertBanner" class="hidden app-card rounded-2xl p-4 text-amber-500 flex items-center justify-between border-amber-500/50">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-triangle-exclamation text-xl text-amber-500"></i>
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-amber-500">DAILY LIMIT WARNING!</p>
+                        <p id="alertMessage" class="text-xs text-slate-600 dark:text-slate-200 mt-0.5">Today's expense has exceeded your daily limit!</p>
+                    </div>
+                </div>
+                <button onclick="dismissAlert()" class="text-xs font-bold px-2">X</button>
+            </div>
+
+            <!-- Top Row: Metric Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="app-card rounded-2xl p-5 flex flex-col justify-between">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Monthly Budget</span>
+                        <button onclick="openBudgetModal()" class="text-xs text-cyan-500 hover:underline font-semibold"><i class="fa-solid fa-pen mr-1"></i>Set</button>
+                    </div>
+                    <h3 id="displayMonthlyBudget" class="text-2xl font-black">Rs. 0</h3>
+                    <div class="mt-4">
+                        <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                            <span>Used</span>
+                            <span id="budgetPercent">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 dark:bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-300 dark:border-slate-800">
+                            <div id="progressBar" class="bg-cyan-500 h-full w-0 transition-all duration-500 shadow-[0_0_10px_#00f2fe]"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="app-card rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Total Cash Flow</span>
+                        <h3 id="displayRemainingBudget" class="text-2xl font-black text-cyan-500 mt-1">Remaining: Rs. 0</h3>
+                        <p id="displayTotalSpent" class="text-xs text-rose-500 mt-1">Total Spent: Rs. 0</p>
+                    </div>
+                    <div class="h-10 w-full mt-2">
+                        <canvas id="sparklineChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="app-card rounded-2xl p-5 flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2 mb-1">
+                            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Today's Status</span>
+                            <button onclick="openBudgetModal()" class="text-[10px] text-cyan-500 hover:underline"><i class="fa-solid fa-pen mr-0.5"></i>Limit</button>
+                        </div>
+                        <p id="displayDailyLimit" class="text-xs text-slate-500 dark:text-slate-400">Daily Limit: Rs. 0</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Today's Expense:</p>
+                        <h3 id="displayTodaySpent" class="text-xl font-black text-amber-500">Rs. 0</h3>
+                    </div>
+                    <div class="w-24 h-20">
+                        <canvas id="todayGaugeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Grid Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left Column -->
+                <div class="app-card-purple rounded-2xl p-6 space-y-6">
+                    <div>
+                        <h3 class="text-sm font-bold text-purple-600 dark:text-purple-300 mb-4 flex items-center">
+                            <i class="fa-solid fa-sliders mr-2"></i> Advanced Financial Management
+                        </h3>
+                        <form id="expenseForm" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Quick Add Transaction</label>
+                                <input type="text" id="expTitle" oninput="autoSelectCategory()" required placeholder="Petrol, Books, Snacks..." class="w-full bg-slate-100 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-purple-400">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Amount (PKR)</label>
+                                <input type="number" id="expAmount" required min="1" placeholder="0" class="w-full bg-slate-100 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-purple-400">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1">Category</label>
+                                <select id="expCategory" class="w-full bg-slate-100 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-purple-400">
+                                    <option value="Food & Mess">Food & Mess</option>
+                                    <option value="Snacks & Tea">Snacks & Tea</option>
+                                    <option value="Petrol & Transport">Petrol & Transport</option>
+                                    <option value="Books & Education">Books & Education</option>
+                                    <option value="Shopping & Clothes">Shopping & Clothes</option>
+                                    <option value="Bills & Utilities">Bills & Utilities</option>
+                                    <option value="Other / Misc">Other / Misc</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full neon-button-purple font-extrabold py-3 rounded-xl transition text-xs">
+                                Record Cloud Expense
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="border-t border-slate-300 dark:border-slate-800 pt-4">
+                        <h4 class="text-xs font-bold text-purple-600 dark:text-purple-300 mb-2">Predictive Spending & Forecast</h4>
+                        <div class="h-36">
+                            <canvas id="predictiveChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Column -->
+                <div class="app-card rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-cyan-600 dark:text-cyan-300 mb-4 flex items-center">
+                            <i class="fa-solid fa-heart-pulse mr-2"></i> Financial Health & Goals
+                        </h3>
+                        <div class="text-center my-2">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Financial Health Score</p>
+                            <div class="w-36 h-24 mx-auto relative flex items-center justify-center">
+                                <canvas id="healthScoreGauge"></canvas>
+                                <span id="healthScoreVal" class="absolute text-2xl font-black mt-4">85</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <p class="text-xs font-semibold mb-1">Savings Goal Progress</p>
+                            <p class="text-[10px] text-cyan-500 mb-1">Goal: New Laptop Fund</p>
+                            <div class="w-full bg-slate-200 dark:bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-300 dark:border-slate-800">
+                                <div class="bg-cyan-500 h-full w-[65%] shadow-[0_0_8px_#00f2fe]"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-300 dark:border-slate-800 pt-4">
+                        <h4 class="text-xs font-bold text-cyan-600 dark:text-cyan-300 mb-2">Category Spending Distribution</h4>
+                        <div class="h-36">
+                            <canvas id="categoryDoughnutChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="app-card-purple rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-sm font-bold text-purple-600 dark:text-purple-300 flex items-center">
+                                <i class="fa-solid fa-list-check mr-2"></i> Transaction Hub
+                            </h3>
+                            <button onclick="clearAllExpenses()" class="text-xs text-rose-500 hover:underline">Clear History</button>
+                        </div>
+
+                        <div class="mb-3">
+                            <input type="text" id="searchTransaction" oninput="renderAllData()" placeholder="Search transactions..." class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-400">
+                        </div>
+
+                        <div id="expenseList" class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                            <!-- Transactions appended dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- BUDGET MODAL -->
+    <div id="budgetModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="app-card max-w-sm w-full rounded-2xl p-6 relative">
+            <h3 class="text-base font-bold mb-4"><i class="fa-solid fa-sliders text-cyan-500 mr-2"></i>Set Limits & Budget</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Monthly Budget Target (PKR)</label>
+                    <input type="number" id="inputMonthlyBudget" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Daily Max Spend Limit (PKR)</label>
+                    <input type="number" id="inputDailyLimit" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm">
+                </div>
+            </div>
+            <div class="flex space-x-2 mt-6">
+                <button onclick="saveLimits()" class="flex-1 neon-button-green font-bold py-2.5 rounded-xl text-xs">Save Settings</button>
+                <button onclick="closeBudgetModal()" class="flex-1 bg-slate-200 dark:bg-slate-800 font-semibold py-2.5 rounded-xl text-xs">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="app-card-purple max-w-md w-full rounded-2xl p-6 relative">
+            <h3 class="text-base font-bold mb-4"><i class="fa-solid fa-gear text-purple-500 mr-2"></i>Cloud Account Settings</h3>
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block mb-1 font-medium">Change Password</label>
+                    <input type="password" id="newPasswordInput" placeholder="New Password" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2">
+                    <button onclick="updatePassword()" class="mt-2 bg-slate-200 dark:bg-slate-800 px-3 py-1.5 rounded-lg font-semibold hover:bg-slate-300 dark:hover:bg-slate-700">Update Password</button>
+                </div>
+                <hr class="border-slate-300 dark:border-slate-800 my-2">
+                <div>
+                    <span class="block mb-1 font-semibold">Data Backup & Export</span>
+                    <div class="flex space-x-2">
+                        <button onclick="exportCSV()" class="flex-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 py-2 rounded-xl font-semibold"><i class="fa-solid fa-file-csv mr-1"></i> Export CSV</button>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeSettingsModal()" class="neon-button-purple font-bold px-4 py-2 rounded-xl text-xs">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER CREDIT -->
+    <footer class="text-center py-4 mt-6 border-t border-slate-300 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400 font-medium">
+        Created by Abdul Haseeb Sajjad
+    </footer>
+
     <!-- FIREBASE & APP JAVASCRIPT -->
     <script>
-        // Firebase Configuration
+        // Firebase Configuration[span_1](start_span)[span_1](end_span)
         const firebaseConfig = {
             apiKey: "AIzaSyAtpOpXsNnr7GFhA5IRHNmhvTnAT6MJ8JI",
             authDomain: "manager-cd77a.firebaseapp.com",
@@ -101,7 +466,6 @@
                 return false;
             } catch (err) {
                 console.error("Cloud Error:", err);
-                alert("Cloud connection error! Check your internet or Firebase config.");
                 return false;
             }
         }
@@ -176,11 +540,8 @@
         }
 
         async function initDashboard() {
-            await fetchUserDataFromCloud(currentUser);
-            document.getElementById('appContainer').classList.add('hidden');
-            document.getElementById('authContainer').classList.remove('hidden');
-            // If valid, show dashboard
             if (currentUser) {
+                await fetchUserDataFromCloud(currentUser);
                 document.getElementById('authContainer').classList.add('hidden');
                 document.getElementById('appContainer').classList.remove('hidden');
                 document.getElementById('userDisplayName').innerText = `Smart Financial Expense Manager (${currentUser})`;
@@ -543,3 +904,5 @@
             initDashboard();
         }
     </script>
+</body>
+</html>
